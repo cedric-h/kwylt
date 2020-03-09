@@ -65,7 +65,7 @@ const SCRIPT: &'static str = r#"
                     (model.down { :active } { :inactive }) colors.main,
                 ] $[
                     box $[
-                            on_mouse_move {|| std:displayln "ev"; ${ x_hover = $t } },
+                            on_mouse_move {|| ${ x_hover = $t } },
                             on_click { ${ close_main = $t } },
                             pos 71 8,
                             size 23 17,
