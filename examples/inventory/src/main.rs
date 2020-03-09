@@ -30,12 +30,12 @@ const SCRIPT: &'static str = r#"
             on_mouse_up { ${ down = $f } },
         ] $[
             box $[
-                on_mouse_down { ${ down = $t } },
-                size 100,
-                pos model.pos.0 model.pos.1,
-                color ~ model.down "gray" "white",
-            ] $[
-            ]
+                    on_mouse_down { ${ down = $t } },
+                    size 100,
+                    pos model.pos.0 model.pos.1,
+                    color ~ model.down "gray" "white",
+                ] $[
+                ]
         ]
 };
 "#;
