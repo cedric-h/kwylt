@@ -554,7 +554,7 @@ mod wl {
         fn call(&self, args: &[VVal]) -> Result<VVal, wlambda::StackAction> {
             if args.len() != 2 && args.len() != 0 {
                 return Err(wlambda::StackAction::panic_msg(format!(
-                    "{} called with the wrong number of arguments: {:?}",
+                    "{} called with too few arguments: {:?}",
                     self.s(),
                     args
                 )));
@@ -691,7 +691,7 @@ mod wl {
                         a: env.arg(3).f() as f32,
                     },
                     _ => return Err(wlambda::StackAction::panic_msg(format!(
-                            "\"color\" called with too few arguments: {:?} (expected 1 or 4)",
+                            "\"color\" called with the wrong number of arguments: {:?} (expected 1 or 4)",
                             env.argv()
                         )))
                 }))))
