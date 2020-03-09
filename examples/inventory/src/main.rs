@@ -18,7 +18,6 @@ const SCRIPT: &'static str = r#"
             model.pos.0 = model.pos.0 + (x - model.last_mouse.0);
             model.pos.1 = model.pos.1 + (y - model.last_mouse.1);
         };
-        std:displayln "delta " (model.last_mouse.0 - x) (model.last_mouse.1 - y);
         model.last_mouse = msg.mouse_pos;
     };
     model
