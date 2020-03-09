@@ -1,11 +1,26 @@
 const SCRIPT: &'static str = r#"
-!:global INIT = {
-    ${
-        down = $f,
-        pos = $[0, 0],
-        last_mouse = $n,
+!colors = ${
+    main = ${
+        active = color 0.5 0.55 0.7 1.0,
+        inactive = color 0.2 0.3 0.4 1.0,
+    },
+    x = ${
+        active = color 0.749 0.039 0.188 1.0,
+        inactive = color 0.552 0.007 0.121 1.0,
     }
 };
+
+!:global INIT = {
+    ${
+        # main
+        down = $f,
+        pos = $[200, 100],
+        last_mouse = $n,
+        # x
+        x_hover = $f,
+    }
+};
+
 !:global UPDATE = {!(model, msg)=@;
     (is_some msg.down) {
         (not msg.down) {
@@ -14,27 +29,47 @@ const SCRIPT: &'static str = r#"
         model.down = msg.down;
     };
     (is_some msg.mouse_pos) {!(x, y)=msg.mouse_pos;
+        model.x_hover = $f;
         (is_some model.last_mouse) {
             model.pos.0 = model.pos.0 + (x - model.last_mouse.0);
             model.pos.1 = model.pos.1 + (y - model.last_mouse.1);
         };
         model.last_mouse = msg.mouse_pos;
     };
+    (is_some msg.x_hover) {
+        model.x_hover = msg.x_hover;
+    };
+    (is_some msg.close_main) {
+        model.pos = $[0, 0];
+    };
     model
 };
+
 !:global VIEW = {!model=_;
     box $[
             color "black",
             size 800 600,
-            model.down { on_mouse_move { ${ mouse_pos = @ } } },
+            model.down {
+                on_mouse_move {|| ${ mouse_pos = @ } }
+            } {
+                on_mouse_move {|| ${ x_hover = $f } }
+            },
             on_mouse_up { ${ down = $f } },
         ] $[
             box $[
                     on_mouse_down { ${ down = $t } },
-                    size 100,
+                    size 100 124,
                     pos model.pos.0 model.pos.1,
-                    color ~ model.down "gray" "white",
+                    (model.down { :active } { :inactive }) colors.main,
                 ] $[
+                    box $[
+                            on_mouse_move {|| std:displayln "ev"; ${ x_hover = $t } },
+                            on_click { ${ close_main = $t } },
+                            pos 71 8,
+                            size 23 17,
+                            (model.x_hover { :active } { :inactive }) colors.x,
+                        ] $[
+                        ]
                 ]
         ]
 };
@@ -225,14 +260,16 @@ mod input {
                         .view
                         .compiled
                         .iter()
+                        .rev()
                         .find_map(|s| {
                             s.handlers
                                 .on_mouse_move
                                 .as_ref()
                                 .filter(|_| contains(s, self.input.mouse_loc))
                         })
-                        .and_then(|h| ctx.call(h, &[VVal::Flt(loc.x as f64), VVal::Flt(loc.y as f64)]).ok())
+                        .and_then(|h| Some(ctx.call(h, &[VVal::Flt(loc.x as f64), VVal::Flt(loc.y as f64)]).expect("handler failed")))
                     {
+                        println!("calling update");
                         self.call_update(ctx, msg);
                         return true;
                     }
@@ -250,6 +287,7 @@ mod input {
                                 .view
                                 .compiled
                                 .iter()
+                                .rev()
                                 .find_map(|s| {
                                     s.handlers
                                         .on_mouse_down
@@ -267,6 +305,7 @@ mod input {
                                 .view
                                 .compiled
                                 .iter()
+                                .rev()
                                 .find_map(|s| {
                                     s.handlers
                                         .on_mouse_up
@@ -401,10 +440,9 @@ mod shapes {
             if self.view.needs_compile {
                 println!("compile");
                 super::shapes::compile_view(
-                    ctx.call(&self.view.fun, &[self.model.clone()])
-                        .ok()
-                        .and_then(|v| super::wl::Elem::from_vval(v).ok())
-                        .expect("view function crash"),
+                    super::wl::Elem::from_vval(ctx.call(&self.view.fun, &[self.model.clone()]).expect("view fun call fail")).expect("view from vval"),
+                    //ctx.call(&self.view.fun, &[self.model.clone()])
+                        //.and_then(|v| super::wl::Elem::from_vval(v).ok())
                     /*
                         .map_err(|e| CallError::UnexpectedStackAction(e))
                         .and_then(|v| {
