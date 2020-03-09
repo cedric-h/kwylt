@@ -554,7 +554,7 @@ mod wl {
         fn call(&self, args: &[VVal]) -> Result<VVal, wlambda::StackAction> {
             if args.len() != 2 && args.len() != 0 {
                 return Err(wlambda::StackAction::panic_msg(format!(
-                    "{} called with too few arguments: {:?}",
+                    "{} called with the wrong number of arguments: {:?}",
                     self.s(),
                     args
                 )));
