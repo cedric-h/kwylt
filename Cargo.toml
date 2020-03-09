@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 wlambda = "0.4.4"
-quicksilver = "0.4.0-alpha0.2"
+quicksilver = { git = "https://github.com/ryanisaacg/quicksilver.git" }
