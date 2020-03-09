@@ -52,7 +52,9 @@ const SCRIPT: &'static str = r#"
             model.down {
                 on_mouse_move {|| ${ mouse_pos = @ } }
             } {
-                on_mouse_move {|| ${ x_hover = $f } }
+                model.x_hover {
+                    on_mouse_move {|| ${ x_hover = $f } }
+                }
             },
             on_mouse_up { ${ down = $f } },
         ] $[
