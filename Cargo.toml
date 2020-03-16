@@ -7,5 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wlambda = "0.4.4"
 quicksilver = { git = "https://github.com/ryanisaacg/quicksilver.git" }
+
+[dependencies.wlambda]
+git = "https://github.com/WeirdConstructor/WLambda.git"
+default-features = false
+features = ["mint"]

@@ -14,7 +14,7 @@ const SCRIPT: &'static str = r#"
     ${
         # main
         down = $f,
-        pos = $[200, 100],
+        pos = $f(200, 100),
         last_mouse = $n,
         # x
         x_hover = $f,
@@ -28,11 +28,10 @@ const SCRIPT: &'static str = r#"
         };
         model.down = msg.down;
     };
-    (is_some msg.mouse_pos) {!(x, y)=msg.mouse_pos;
+    (is_some msg.mouse_pos) {
         model.x_hover = $f;
         (is_some model.last_mouse) {
-            model.pos.0 = model.pos.0 + (x - model.last_mouse.0);
-            model.pos.1 = model.pos.1 + (y - model.last_mouse.1);
+            model.pos = model.pos + (msg.mouse_pos - model.last_mouse);
         };
         model.last_mouse = msg.mouse_pos;
     };
@@ -40,40 +39,40 @@ const SCRIPT: &'static str = r#"
         model.x_hover = msg.x_hover;
     };
     (is_some msg.close_main) {
-        model.pos = $[0, 0];
+        model.pos = model.pos * 0;
     };
     model
 };
 
 !:global VIEW = {!model=_;
     box $[
-            color "black",
-            size 800 600,
-            model.down {
-                on_mouse_move {|| ${ mouse_pos = @ } }
-            } {
-                model.x_hover {
-                    on_mouse_move {|| ${ x_hover = $f } }
-                }
-            },
-            on_mouse_up { ${ down = $f } },
+        color "black",
+        size $f(800, 600),
+        model.down {
+            on_mouse_move {|| ${ mouse_pos = _ } }
+        } {
+            model.x_hover {
+                on_mouse_move {|| ${ x_hover = $f } }
+            }
+        },
+        on_mouse_up { ${ down = $f } },
+    ] $[
+        box $[
+            on_mouse_down { ${ down = $t } },
+            size $f(100, 124),
+            pos model.pos,
+            (model.down { :active } { :inactive }) colors.main,
         ] $[
             box $[
-                    on_mouse_down { ${ down = $t } },
-                    size 100 124,
-                    pos model.pos.0 model.pos.1,
-                    (model.down { :active } { :inactive }) colors.main,
-                ] $[
-                    box $[
-                            on_mouse_move {|| ${ x_hover = $t } },
-                            on_click { ${ close_main = $t } },
-                            pos 71 8,
-                            size 23 17,
-                            (model.x_hover { :active } { :inactive }) colors.x,
-                        ] $[
-                        ]
-                ]
+                on_mouse_move {|| ${ x_hover = $t } },
+                on_click { ${ close_main = $t } },
+                pos $f(71, 8),
+                size $f(23, 17),
+                (model.x_hover { :active } { :inactive }) colors.x,
+            ] $[
+            ]
         ]
+    ]
 };
 "#;
 
@@ -269,9 +268,9 @@ mod input {
                                 .as_ref()
                                 .filter(|_| contains(s, self.input.mouse_loc))
                         })
-                        .and_then(|h| Some(ctx.call(h, &[VVal::Flt(loc.x as f64), VVal::Flt(loc.y as f64)]).expect("handler failed")))
+                        .and_then(|h| Some(ctx.call(h, &[VVal::FVec(loc.into())]).expect("handler failed")))
                     {
-                        println!("calling update");
+                        log::debug!("calling update");
                         self.call_update(ctx, msg);
                         return true;
                     }
@@ -332,7 +331,7 @@ mod input {
         /// and flags for the view to be regenerated accordingly.
         pub fn call_update(&mut self, ctx: &mut EvalContext, msg: VVal) {
             if let Ok(model) = ctx.call(&self.update, &[self.model.clone(), msg]) {
-                println!("new model: {}", model.s());
+                log::info!("new model: {}", model.s());
                 self.model = model;
                 self.view.needs_compile = true;
             }
@@ -440,7 +439,7 @@ mod shapes {
             gfx: &mut quicksilver::graphics::Graphics,
         ) {
             if self.view.needs_compile {
-                println!("compile");
+                log::debug!("compile");
                 super::shapes::compile_view(
                     super::wl::Elem::from_vval(ctx.call(&self.view.fun, &[self.model.clone()]).expect("view fun call fail")).expect("view from vval"),
                     //ctx.call(&self.view.fun, &[self.model.clone()])
@@ -733,14 +732,13 @@ mod wl {
                 $(
                 g.borrow_mut().add_func(
                     $name,
-                    |env: &mut Env, argc: usize| {
-                        Ok(VVal::Usr(Box::new(Attr::$attr(match argc {
-                            1 => Vector::ONE * (env.arg(0).f() as f32),
-                            _ => Vector::new(env.arg(0).f() as f32, env.arg(1).f() as f32),
-                        }))))
+                    |env: &mut Env, _: usize| {
+                        Ok(VVal::Usr(Box::new(Attr::$attr(
+                            env.arg(0).nvec::<f64>().mint2::<f32>().into()
+                        ))))
                     },
                     Some(1),
-                    Some(2),
+                    Some(1),
                 );
                 )*
             }
