@@ -268,13 +268,18 @@ mod input {
                                 .as_ref()
                                 .filter(|_| contains(s, self.input.mouse_loc))
                         })
-                        .and_then(|h| Some(ctx.call(h, &[VVal::FVec(loc.into())]).expect("handler failed")))
+                        .and_then(|h| {
+                            Some(
+                                ctx.call(h, &[VVal::FVec(loc.into())])
+                                    .expect("handler failed"),
+                            )
+                        })
                     {
                         log::debug!("calling update");
                         self.call_update(ctx, msg);
                         return true;
                     }
-                },
+                }
                 Event::PointerInput(p) => {
                     // if the old isn't the new, we know something changed.
                     // (and this event isn't just a repeat)
@@ -441,9 +446,13 @@ mod shapes {
             if self.view.needs_compile {
                 log::debug!("compile");
                 super::shapes::compile_view(
-                    super::wl::Elem::from_vval(ctx.call(&self.view.fun, &[self.model.clone()]).expect("view fun call fail")).expect("view from vval"),
+                    super::wl::Elem::from_vval(
+                        ctx.call(&self.view.fun, &[self.model.clone()])
+                            .expect("view fun call fail"),
+                    )
+                    .expect("view from vval"),
                     //ctx.call(&self.view.fun, &[self.model.clone()])
-                        //.and_then(|v| super::wl::Elem::from_vval(v).ok())
+                    //.and_then(|v| super::wl::Elem::from_vval(v).ok())
                     /*
                         .map_err(|e| CallError::UnexpectedStackAction(e))
                         .and_then(|v| {
@@ -471,11 +480,11 @@ mod shapes {
 
 mod wl {
     use quicksilver::geom::Vector;
+    use quicksilver::graphics::Color;
     use std::cell::RefCell;
     use std::rc::Rc;
     use wlambda::vval::VValUserData;
     use wlambda::VVal;
-    use quicksilver::graphics::Color;
 
     #[derive(Debug, Clone)]
     pub enum ElemKind {
@@ -613,7 +622,7 @@ mod wl {
         //
         // -- STYLE --
         //
-        Color(Color)
+        Color(Color),
     }
     impl Attr {
         /// Turn a VVal into an Attr.
